@@ -7,8 +7,8 @@ navigation software, presumably ignoring 2002 since that's the (obviously
 incorrect) default year when the GPS unit is powered up.
 
 This PIC16F1825 code receives binary data from the Furuno GN80 and outputs the
-corrected (+1024 week) date.  This uses a signed 32-bit time_t with <time.h>
-functions, so this will suffer from the 2038 date problem.
+corrected (+1024 week) date.  The adjustment assumes the starting year is between 2000 and 2080
+(i.e. it only checks for the year being divisible by four and does not account for the year 2100).
 
 The GPS receiver is soldered to the navigation unit motherboard, and needs to be removed
 in order to use this, as the PIC needs to intercept and modify the serial data.  I
