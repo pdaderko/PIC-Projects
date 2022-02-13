@@ -6,8 +6,7 @@
  * incorrect) default year when the GPS unit is powered up.
  * 
  * This PIC16 code receives binary data from the Furuno GN80 and outputs the
- * corrected (+1024 week) date.  This uses a signed 32-bit time_t with <time.h>
- * functions, so this will suffer from the 2038 date problem.
+ * corrected (+1024 week) date.
  * 
  * The binary protocol looks to be a clone of Trimble TSIP, with Furuno's own
  * packet structures.
@@ -37,10 +36,10 @@
 #include <xc.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include <time.h>
 
 #include "system.h"
 #include "eusart.h"
+#include "add1024weeks.h"
 
 
 //convert BCD to decimal
@@ -69,13 +68,9 @@ void main(void)
 {
   uint8_t rx_data, tmp_tx, check_xor=0, byte10=0, pktcnt=0;
   uint8_t pktid=0x03; //packet ID of 0x03 should be invalid (end of packet), so use for unknown ID
-  struct tm *date;
-  time_t conv_date=0;
+  uint8_t year, month, day;
 
   SYSTEM_Initialize();
-
-  //initialize date values
-  date=gmtime(&conv_date);
 
   while(1)
   {
@@ -113,7 +108,7 @@ void main(void)
           if (!byte10) //if 0x10 data, only want to do this once (check XOR doesn't include both 0x10s)
           {
             check_xor^=rx_data; //will remove this byte from check byte
-            date->tm_year=bcd_to_dec(rx_data)+100; //year since 1900
+            year=bcd_to_dec(rx_data); //year since 2000
           }
         }
         else if ((pktcnt==21)||(pktcnt==27)) //month (21=current, 27=last fix)
@@ -121,7 +116,7 @@ void main(void)
           if (!byte10) //if 0x10 data, only want to do this once (check XOR doesn't include both 0x10s)
           {
             check_xor^=rx_data; //will remove this byte from check byte
-            date->tm_mon=bcd_to_dec(rx_data)-1; //months since January (0-11)
+            month=bcd_to_dec(rx_data); //months, 1-indexed
           }
         }
         else if ((pktcnt==22)||(pktcnt==28)) //day (22=current, 28=last fix)
@@ -129,27 +124,25 @@ void main(void)
           if (!byte10) //if 0x10 data, only want to do this once (check XOR doesn't include both 0x10s, and don't want to send twice)
           {
             check_xor^=rx_data; //will remove this byte from check byte
-            date->tm_mday=bcd_to_dec(rx_data); //day of the month (1-31)
+            day=bcd_to_dec(rx_data); //day of the month (1-31)
             
             //fix the date
-            conv_date=mktime(date); //convert tm to time_t
-            conv_date+=((uint32_t)1024*7*24*60*60); //add 1024 weeks (in seconds)
-            date=gmtime(&conv_date); //convert time_t back to tm
+            add_1024_weeks(&year, &month, &day); // Uh
 
             //send replacement bytes (duplicating 0x10 if necessary)
-            tmp_tx=dec_to_bcd((uint8_t)date->tm_year-100); //year
+            tmp_tx=dec_to_bcd(year); //year
             send_byte(tmp_tx);
             if (tmp_tx==0x10)
               send_byte(tmp_tx);
             check_xor^=tmp_tx; //XOR replacement byte
             
-            tmp_tx=dec_to_bcd((uint8_t)date->tm_mon+1); //month
+            tmp_tx=dec_to_bcd(month); //month
             send_byte(tmp_tx);
             if (tmp_tx==0x10)
               send_byte(tmp_tx);
             check_xor^=tmp_tx; //XOR replacement byte
             
-            tmp_tx=dec_to_bcd((uint8_t)date->tm_mday); //day
+            tmp_tx=dec_to_bcd(day); //day
             send_byte(tmp_tx);
             if (tmp_tx==0x10)
               send_byte(tmp_tx);
