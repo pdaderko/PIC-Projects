@@ -25,6 +25,8 @@ Using insulated 30 AWG wires, connect MCU pin 1 to the + side of C27 (VDD), MCU 
 On the bottom of the board, solder the wire that you fed through the board to the via shown for VSYNC.  
 Cut the trace shown to disconnect the new CSYNC output from the dead CPLD output.
 
+Finish up the install by tacking down the MCU and wires with a few drops of clear fingernail polish (or similar) to protect the mod.
+
 If modifications were performed correctly, once powered up, you should see the correct video again!
 ![working](pics/working.jpg)
 
