@@ -6,7 +6,7 @@ A blown sync output pin makes the game unusable, U11 has no dump, and the part i
 This project uses an 8-pin PIC16F15313 (SOIC package) to recreate the composite sync from the 6.144 MHz pixel clock and 60 Hz VSYNC pin available on the board.
 
 MCU pinout:  
-![pinout](pics/pinout.jpg)
+![pinout](pics/pinout.png)
 
 MCU Connections:  
 RA5: 6.144 MHz pixel clock input  
